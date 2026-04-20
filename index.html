@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DashEx Cargo — Precision in Every Delivery</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; font-family: 'Inter', sans-serif; }
+    body { background: #fff; color: #1e293b; overflow-x: hidden; }
+    button { cursor: pointer; border: none; background: none; font-family: inherit; }
+    input, select, textarea { font-family: inherit; }
+    a { text-decoration: none; color: inherit; }
+
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+    @keyframes spin   { to { transform: rotate(360deg); } }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+    .animate-pulse { animation: pulse 2s ease-in-out infinite; }
+    .animate-spin  { animation: spin 1s linear infinite; }
+    .fade-in       { animation: fadeIn 0.5s ease forwards; }
+
+    @media print { .no-print { display: none !important; } body { background: #fff; } }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #f97316; border-radius: 3px; }
+
+    .leaflet-container { font-family: 'Inter', sans-serif !important; border-radius: 12px; }
+    .leaflet-popup-content-wrapper { border-radius: 10px !important; box-shadow: 0 8px 24px rgba(0,0,0,0.15) !important; border: 1px solid #f1f5f9 !important; font-size: 13px !important; }
+    .leaflet-popup-content { margin: 10px 14px !important; font-weight: 600; color: #0a1628; }
+    .leaflet-popup-tip { background: #fff !important; }
+    .map-legend { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 10px; }
+    .map-legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #64748b; font-weight: 500; }
+    .map-legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+    .card-hover { transition: box-shadow 0.3s, transform 0.3s, border-color 0.3s; }
+    .card-hover:hover { box-shadow: 0 20px 40px rgba(0,0,0,0.1); transform: translateY(-4px); border-color: #fed7aa; }
+
+    .btn-orange { background:#f97316; color:#fff; font-weight:700; border-radius:12px; transition:background 0.2s,transform 0.1s; }
+    .btn-orange:hover { background:#fb923c; }
+    .btn-orange:active { transform:scale(0.97); }
+    .btn-dark { background:#0a1628; color:#fff; font-weight:700; border-radius:12px; transition:background 0.2s; }
+    .btn-dark:hover { background:#152844; }
+
+    .input-field { background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:12px 16px; font-size:14px; width:100%; transition:border-color 0.2s; outline:none; }
+    .input-field:focus { border-color:#f97316; }
+    .input-dark { background:#152844; border:1.5px solid rgba(255,255,255,0.1); border-radius:12px; padding:14px 20px; font-size:14px; width:100%; color:#fff; transition:border-color 0.2s; outline:none; }
+    .input-dark::placeholder { color:#64748b; }
+    .input-dark:focus { border-color:#f97316; }
+
+    .section-label { color:#f97316; font-weight:700; font-size:12px; letter-spacing:.1em; text-transform:uppercase; margin-bottom:12px; }
+    .section-title { font-size:clamp(1.8rem,4vw,3rem); font-weight:900; color:#0a1628; margin-bottom:12px; line-height:1.15; }
+    .section-sub   { color:#64748b; font-size:17px; max-width:560px; margin:0 auto; }
+    .stat-box      { background:#152844; border-radius:16px; padding:40px 16px; text-align:center; border:1px solid rgba(255,255,255,0.05); }
+    .feature-card  { display:flex; gap:16px; background:#fff; border-radius:16px; padding:24px; box-shadow:0 1px 3px rgba(0,0,0,0.06); border:1px solid #f1f5f9; }
+    .testimonial-card { background:#f8fafd; border-radius:16px; padding:32px; border:1px solid #f1f5f9; display:flex; flex-direction:column; gap:16px; }
+    .metric-card   { background:linear-gradient(135deg,rgba(249,115,22,.2),rgba(234,88,12,.1)); border:1px solid rgba(249,115,22,.2); border-radius:16px; padding:24px; text-align:center; }
+
+    .grid-2 { display:grid; grid-template-columns:repeat(2,1fr); gap:24px; }
+    .grid-3 { display:grid; grid-template-columns:repeat(3,1fr); gap:24px; }
+    .grid-4 { display:grid; grid-template-columns:repeat(4,1fr); gap:24px; }
+    @media(max-width:900px){ .grid-3{grid-template-columns:repeat(2,1fr);} .grid-4{grid-template-columns:repeat(2,1fr);} }
+    @media(max-width:600px){ .grid-2,.grid-3,.grid-4{grid-template-columns:1fr;} }
+    .max-w-7xl { max-width:1280px; margin:0 auto; padding:0 16px; }
+    .max-w-5xl { max-width:1024px; margin:0 auto; padding:0 16px; }
+    .max-w-3xl { max-width:768px;  margin:0 auto; padding:0 16px; }
+
+    .form-label { display:block; font-size:11px; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:.05em; margin-bottom:6px; }
+    select.input-field { appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 12px center; padding-right:36px; }
+
+    .success-banner { background:rgba(34,197,94,.1); border:1px solid rgba(34,197,94,.3); color:#16a34a; font-weight:600; border-radius:12px; padding:16px 20px; margin-bottom:24px; display:flex; align-items:center; gap:8px; }
+    .error-box { background:rgba(239,68,68,.1); border:1px solid rgba(239,68,68,.3); color:#dc2626; border-radius:12px; padding:12px 16px; font-size:14px; }
+
+    .progress-step { display:flex; flex-direction:column; align-items:center; flex:1; min-width:0; }
+    .progress-dot  { width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; margin-bottom:8px; transition:all 0.3s; }
+    .progress-dot.done    { background:#f97316; color:#fff; box-shadow:0 4px 12px rgba(249,115,22,0.4); }
+    .progress-dot.pending { background:#f1f5f9; color:#94a3b8; }
+    .progress-label       { font-size:9px; text-align:center; font-weight:600; line-height:1.3; }
+    .progress-label.done  { color:#ea580c; }
+    .progress-label.pending { color:#94a3b8; }
+
+    .timeline-item    { display:flex; gap:16px; position:relative; }
+    .timeline-dot     { width:32px; height:32px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; color:#fff; z-index:1; }
+    .timeline-content { flex:1; background:#f8fafd; border-radius:12px; padding:16px; }
+
+    .about-grid { display:grid; grid-template-columns:1fr 1fr; gap:64px; align-items:center; margin-bottom:80px; }
+    @media(max-width:768px){ .about-grid{grid-template-columns:1fr;gap:32px;} }
+    .about-img     { border-radius:16px; overflow:hidden; box-shadow:0 25px 50px rgba(0,0,0,0.25); }
+    .about-img img { width:100%; height:320px; object-fit:cover; }
+    .footer-grid   { display:grid; grid-template-columns:2fr 1fr 1fr; gap:32px; margin-bottom:32px; }
+    @media(max-width:768px){ .footer-grid{grid-template-columns:1fr;} }
+
+    .hero-dots { display:flex; justify-content:center; gap:8px; margin-top:32px; }
+    .hero-dot  { width:10px; height:10px; border-radius:5px; background:rgba(255,255,255,.4); border:none; cursor:pointer; transition:all 0.3s; }
+    .hero-dot.active { background:#fb923c; width:24px; }
+
+    .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:200; display:flex; align-items:center; justify-content:center; padding:16px; backdrop-filter:blur(4px); }
+    .modal-box     { background:#fff; border-radius:20px; padding:40px 32px; width:100%; max-width:480px; box-shadow:0 32px 64px rgba(0,0,0,0.3); position:relative; max-height:90vh; overflow-y:auto; }
+    .modal-close   { position:absolute; top:16px; right:16px; width:32px; height:32px; border-radius:50%; background:#f1f5f9; display:flex; align-items:center; justify-content:center; color:#64748b; font-size:18px; font-weight:700; transition:background 0.2s; }
+    .modal-close:hover { background:#e2e8f0; }
+    .auth-tab      { flex:1; padding:10px; font-size:14px; font-weight:700; border-radius:10px; transition:all 0.2s; color:#64748b; }
+    .auth-tab.active { background:#f97316; color:#fff; }
+
+    .dash-sidebar  { width:240px; background:#0a1628; min-height:100vh; padding:24px 16px; display:flex; flex-direction:column; gap:8px; flex-shrink:0; }
+    @media(max-width:768px){ .dash-sidebar{display:none;} }
+    .dash-nav-item { display:flex; align-items:center; gap:12px; padding:12px 16px; border-radius:12px; color:#94a3b8; font-size:14px; font-weight:600; transition:all 0.2s; cursor:pointer; }
+    .dash-nav-item:hover  { background:rgba(255,255,255,0.06); color:#e2e8f0; }
+    .dash-nav-item.active { background:rgba(249,115,22,0.15); color:#fb923c; }
+    .dash-card { background:#fff; border-radius:16px; padding:24px; border:1px solid #f1f5f9; box-shadow:0 1px 3px rgba(0,0,0,0.04); margin-bottom:20px; }
+    .status-badge { font-size:12px; font-weight:700; padding:4px 10px; border-radius:999px; color:#fff; display:inline-block; }
+
+    @media(max-width:768px){ .desktop-nav,.track-cta{display:none!important;} .hamburger{display:flex!important;} }
+    @media(min-width:769px){ .hamburger{display:none!important;} }
+    #receipt-area { font-family:Arial,sans-serif; }
+
+    .spinner { width:32px; height:32px; border:3px solid #f1f5f9; border-top-color:#f97316; border-radius:50%; animation:spin 0.8s linear infinite; margin:0 auto; }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+const { createElement:h, useState, useEffect, useRef, useCallback } = React;
+
+/* ════════════════════════════════════════════
+   SUPABASE
+════════════════════════════════════════════ */
+const SB_URL = 'https://ewgtpxomgkpbmfyddypw.supabase.co';
+const SB_KEY = 'sb_publishable_NkeueZ7vabkD9nUIPDaGwQ_GCd5Ci40';
+
+async function sbFetch(table, qs='', method='GET', body=null){
+  const h2 = {
+    'apikey': SB_KEY,
+    'Authorization': 'Bearer '+SB_KEY,
+    'Content-Type': 'application/json',
+  };
+  if(method==='POST')  h2['Prefer']='return=representation';
+  if(method==='PATCH') h2['Prefer']='return=representation';
+  const res = await fetch(`${SB_URL}/rest/v1/${table}${qs}`,{method,headers:h2,body:body?JSON.stringify(body):undefined});
+  if(!res.ok){ const e=await res.text(); throw new Error(e); }
+  const txt=await res.text(); return txt?JSON.parse(txt):(method==='DELETE'?true:[]);
+}
+const db = {
+  get:   (t,q='')    => sbFetch(t,'?select=*'+q),
+  post:  (t,data)    => sbFetch(t,'','POST',data),
+  patch: (t,q,data)  => sbFetch(t,q,'PATCH',data),
+  del:   (t,q)       => sbFetch(t,q,'DELETE'),
+};
+
+/* ════════════════════════════════════════════
+   SESSION
+════════════════════════════════════════════ */
+const SK = 'dx_session';
+const getSession  = () => { try{ const r=sessionStorage.getItem(SK); return r?JSON.parse(r):null; }catch{return null;} };
+const setSession  = u  => sessionStorage.setItem(SK, JSON.stringify(u));
+const clearSession= () => sessionStorage.removeItem(SK);
+
+/* ════════════════════════════════════════════
+   CONSTANTS
+════════════════════════════════════════════ */
+const DEFAULT_HEROES = [
+  'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=1600&q=80&fit=crop',
+  'https://images.unsplash.com/photo-1578575437130-527eed3abbec?w=1600&q=80&fit=crop',
+  'https://images.unsplash.com/photo-1565891741441-64926e3e04f8?w=1600&q=80&fit=crop',
+  'https://images.unsplash.com/photo-1494412651409-8963ce7935a7?w=1600&q=80&fit=crop',
+];
+const HERO_TEXTS = [
+  {headline:'Fastest & Reliable', sub:'Courier Service'},
+  {headline:'Professional',       sub:'Freight Solutions'},
+  {headline:'Industry Standard',  sub:'Warehousing'},
+  {headline:'Global Coverage',    sub:'160+ Countries'},
+];
+const STATUS_STEPS   = ['Order Placed','Processing','Picked Up','In Transit','Customs Clearance','Out for Delivery','Delivered'];
+const STATUS_OPTIONS = ['Order Placed','Processing','Picked Up','In Transit','Customs Clearance','Out for Delivery','Delivered','On Hold','Exception'];
+const SERVICE_OPTIONS= ['Express Air','Standard Air','Economy Air','FCL Ocean','LCL Ocean','Ground Express','Ground Standard'];
+const PACKAGE_TYPES  = ['Box','Envelope','Pallet','Crate','Drum','Bag','Roll','Other'];
+const STATUS_BG = {'Order Placed':'#3b82f6','Processing':'#eab308','Picked Up':'#a855f7','In Transit':'#f97316','Customs Clearance':'#6366f1','Out for Delivery':'#fb923c','Delivered':'#22c55e','On Hold':'#f87171','Exception':'#ef4444'};
+
+const SERVICES=[
+  {title:'Air Freight',       icon:`<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21 4 19 4s-2 1-3.5 2.5L11 8 2.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 7.3c.3.4.8.5 1.3.3l.5-.3c.4-.2.6-.6.5-1.1z"/></svg>`, desc:'Fast and reliable air cargo solutions connecting major cities worldwide with real-time tracking.'},
+  {title:'Sea Freight',       icon:`<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 21c.6.5 1.2 1 2.5 1C7 22 7 20 9.5 20c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/><path d="M19.38 20A11.6 11.6 0 0 0 21 14l-9-4-9 4c0 2.2.7 4.3 1.62 6"/><path d="M22 7h-5l-3-6-3 6H6"/></svg>`, desc:'Cost-effective ocean freight with FCL and LCL options for shipments of every size.'},
+  {title:'Ground Transport',  icon:`<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>`, desc:'Comprehensive road freight coverage for domestic and regional deliveries on schedule.'},
+  {title:'Warehousing',       icon:`<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`, desc:'State-of-the-art secure warehousing facilities with inventory management solutions.'},
+  {title:'Express Delivery',  icon:`<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>`, desc:'Same-day and next-business-day delivery for time-critical shipments globally.'},
+  {title:'Customs Clearance', icon:`<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/></svg>`, desc:'Expert customs brokerage ensuring smooth cross-border movement of your goods.'},
+];
+const FEATURES=[
+  {title:'Real-Time Tracking', icon:`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/></svg>`, desc:'Track your shipment minute-by-minute with our advanced GPS tracking system.'},
+  {title:'Secure Warehousing', icon:`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`, desc:'State-of-the-art security systems protect your cargo at all our facilities.'},
+  {title:'Express Delivery',   icon:`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>`, desc:'Lightning-fast delivery infrastructure ensuring the fastest possible transit times.'},
+  {title:'Domestic Services',  icon:`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>`, desc:'Next-day delivery for time-sensitive parcels with full domestic coverage.'},
+  {title:'Global Coverage',    icon:`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>`, desc:'Worldwide coverage by sea and air across 160+ countries with local expertise.'},
+  {title:'24/7 Support',       icon:`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.84 13.1a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.77 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6.16 6.16l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>`, desc:'Round-the-clock customer service and expert logistics advice whenever you need it.'},
+];
+const STATS=[{value:'101,273+',label:'Delivered Packages'},{value:'673,754+',label:'KM Per Year'},{value:'16,714+',label:'Happy Clients'},{value:'160+',label:'Countries Served'}];
+const TESTIMONIALS=[
+  {initials:'MP',name:'Monique Pete',   role:'Logistics Manager, Martrax Inc.',      quote:'Given my past experiences with other logistics companies, I can say without exception that the services provided by DashEx Cargo greatly exceed industry standards.'},
+  {initials:'SA',name:'Steve Anderson', role:'President/Owner, Duplication Factory', quote:'More than once, DashEx Cargo has saved the day, delivering our cargo on time with short notice. They have won my gratitude with their can-do approach.'},
+  {initials:'CB',name:'Cathy Beckman',  role:'Logistics Team, Oxea Chemicals',       quote:'I am very pleased with the service. They find great carriers and use them consistently so we get a high level of service. Their communication is outstanding.'},
+];
+
+/* ════════════════════════════════════════════
+   HELPERS
+════════════════════════════════════════════ */
+function genTN(){ return `DCX${Date.now().toString(36).toUpperCase()}${Math.random().toString(36).substring(2,6).toUpperCase()}`; }
+function fmtDate(iso){ if(!iso)return'—'; try{return new Date(iso).toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});}catch{return iso;} }
+function fmtDT(d,t){ if(!d)return'—'; try{return `${new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})} ${t||''}`.trim();}catch{return `${d} ${t}`.trim();} }
+function stepIdx(status){ const i=STATUS_STEPS.indexOf(status); return i===-1?0:i; }
+function emptyForm(){ return {receiverName:'',receiverEmail:'',receiverPhone:'',receiverAddress:'',receiverCity:'',receiverCountry:'',description:'',weight:'',dimensions:'',packageType:'Box',quantity:1,serviceType:'Express Air',origin:'',destination:'',estimatedDelivery:'',specialInstructions:''}; }
+
+/* ════════════════════════════════════════════
+   ROUTER
+════════════════════════════════════════════ */
+function useHash(){
+  const [hash,setHash]=useState(window.location.hash||'#/');
+  useEffect(()=>{ const fn=()=>setHash(window.location.hash||'#/'); window.addEventListener('hashchange',fn); return()=>window.removeEventListener('hashchange',fn); },[]);
+  return hash;
+}
+function nav(path){ window.location.hash=path; }
+
+/* ════════════════════════════════════════════
+   SITE IMAGES HOOK
+════════════════════════════════════════════ */
+const IMG_DEFAULTS = {
+  about:           'https://images.unsplash.com/photo-1553413077-190dd305871c?w=900&q=80&fit=crop',
+  tracking_image:  '',
+  delivery_image:  'https://images.unsplash.com/photo-1568515045052-f9a854d70bfd?w=1200&q=80&fit=crop',
+  warehouse_image: 'https://images.unsplash.com/photo-1553413077-190dd305871c?w=1200&q=80&fit=crop',
+  security_image:  'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1200&q=80&fit=crop',
+};
+
+function useSiteImages(){
+  const [imgs,setImgs]=useState({});
+  useEffect(()=>{
+    db.get('dashex_site_images').then(rows=>{
+      const m={...IMG_DEFAULTS};
+      rows.forEach(r=>{ if(r.value && !r.value.startsWith('data:')) m[r.key]=r.value; });
+      setImgs(m);
+    }).catch(()=>{ setImgs({...IMG_DEFAULTS}); });
+  },[]);
+  return imgs;
+}
+
+/* ════════════════════════════════════════════
+   LOGO
+════════════════════════════════════════════ */
+function Logo({size='md',url=null}){
+  if(url) return h('img',{src:url,alt:'DashEx',style:{height:size==='sm'?'32px':'40px',width:'auto',objectFit:'contain'}});
+  const big=size==='lg'?'28px':size==='sm'?'18px':'22px', tiny=size==='sm'?'8px':'9px', box=size==='sm'?'30px':size==='lg'?'44px':'36px', bf=size==='sm'?'14px':size==='lg'?'22px':'18px';
+  return h('div',{style:{display:'flex',alignItems:'center',gap:'8px'}},
+    h('div',{style:{width:box,height:box,background:'#f97316',borderRadius:'8px',display:'flex',alignItems:'center',justifyContent:'center',boxShadow:'0 4px 12px rgba(249,115,22,0.4)'}},h('span',{style:{color:'#fff',fontWeight:900,fontSize:bf,lineHeight:1}},'D')),
+    h('div',null,h('div',{style:{color:'#fff',fontWeight:900,fontSize:big,lineHeight:1,letterSpacing:'0.02em'}},'DASH',h('span',{style:{color:'#fb923c'}},'EX')),h('div',{style:{color:'#fdba74',fontSize:tiny,fontWeight:600,letterSpacing:'0.2em',textTransform:'uppercase',lineHeight:1,marginTop:'2px'}},'Cargo'))
+  );
+}
+
+/* ════════════════════════════════════════════
+   AUTH MODAL
+════════════════════════════════════════════ */
+function AuthModal({tab0='login',onClose,onAuth}){
+  const [tab,setTab]=useState(tab0);
+  const [le,setLE]=useState(''); const [lp,setLP]=useState(''); const [lerr,setLerr]=useState(''); const [ll,setLL]=useState(false);
+  const [rn,setRN]=useState(''); const [re,setRE]=useState(''); const [rph,setRPh]=useState(''); const [rp,setRP]=useState(''); const [rp2,setRP2]=useState(''); const [rerr,setRerr]=useState(''); const [rl,setRL]=useState(false);
+
+  const doLogin=async e=>{
+    e.preventDefault(); setLerr(''); setLL(true);
+    try{
+      const rows=await db.get('dashex_users',`&email=eq.${encodeURIComponent(le.trim().toLowerCase())}`);
+      if(!rows.length){setLerr('No account found with that email.');return;}
+      if(rows[0].password_hash!==btoa(lp)){setLerr('Incorrect password.');return;}
+      setSession(rows[0]); onAuth(rows[0]);
+    }catch{setLerr('Login failed. Try again.');}
+    finally{setLL(false);}
+  };
+
+  const doRegister=async e=>{
+    e.preventDefault(); setRerr(''); setRL(true);
+    try{
+      if(!rn.trim()){setRerr('Enter your full name.');return;}
+      if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(re.trim())){setRerr('Enter a valid email.');return;}
+      if(rp.length<6){setRerr('Password must be at least 6 characters.');return;}
+      if(rp!==rp2){setRerr('Passwords do not match.');return;}
+      const ck=await db.get('dashex_users',`&email=eq.${encodeURIComponent(re.trim().toLowerCase())}&select=id`);
+      if(ck.length){setRerr('An account with that email already exists.');return;}
+      const [user]=await db.post('dashex_users',{name:rn.trim(),email:re.trim().toLowerCase(),phone:rph.trim()||null,password_hash:btoa(rp)});
+      setSession(user); onAuth(user);
+    }catch(err){setRerr('Registration failed. Try again.');}
+    finally{setRL(false);}
+  };
+
+  const sw=t=>{setTab(t);setLerr('');setRerr('');};
+
+  return h('div',{className:'modal-overlay',onClick:e=>{if(e.target===e.currentTarget)onClose();}},
+    h('div',{className:'modal-box fade-in'},
+      h('button',{className:'modal-close',onClick:onClose},'x'),
+      h('div',{style:{textAlign:'center',marginBottom:'24px'}},
+        h('div',{style:{display:'flex',alignItems:'center',justifyContent:'center',marginBottom:'12px'}},h('div',{style:{width:'48px',height:'48px',background:'#f97316',borderRadius:'12px',display:'flex',alignItems:'center',justifyContent:'center'}},h('span',{style:{color:'#fff',fontWeight:900,fontSize:'24px'}},'D'))),
+        h('h2',{style:{fontWeight:900,fontSize:'22px',color:'#0a1628'}},'DashEx Cargo'),
+        h('p',{style:{color:'#64748b',fontSize:'14px',marginTop:'4px'}},tab==='login'?'Sign in to your account':'Create your account')
+      ),
+      h('div',{style:{display:'flex',background:'#f1f5f9',borderRadius:'12px',padding:'4px',marginBottom:'24px',gap:'4px'}},
+        h('button',{className:`auth-tab${tab==='login'?' active':''}`,onClick:()=>sw('login')},'Sign In'),
+        h('button',{className:`auth-tab${tab==='register'?' active':''}`,onClick:()=>sw('register')},'Create Account')
+      ),
+      tab==='login'
+        ?h('form',{onSubmit:doLogin,style:{display:'flex',flexDirection:'column',gap:'16px'}},
+            h('div',null,h('label',{className:'form-label'},'Email'),h('input',{className:'input-field',type:'email',value:le,onChange:e=>setLE(e.target.value),placeholder:'you@example.com',required:true})),
+            h('div',null,h('label',{className:'form-label'},'Password'),h('input',{className:'input-field',type:'password',value:lp,onChange:e=>setLP(e.target.value),placeholder:'Your password',required:true})),
+            lerr&&h('div',{className:'error-box'},lerr),
+            h('button',{type:'submit',className:'btn-orange',style:{padding:'14px',fontSize:'15px',width:'100%'},disabled:ll},ll?'Signing in...':'Sign In'),
+            h('p',{style:{textAlign:'center',fontSize:'13px',color:'#64748b'}},'No account? ',h('button',{type:'button',onClick:()=>sw('register'),style:{color:'#f97316',fontWeight:700,background:'none',border:'none',cursor:'pointer'}},'Register here'))
+          )
+        :h('form',{onSubmit:doRegister,style:{display:'flex',flexDirection:'column',gap:'14px'}},
+            h('div',null,h('label',{className:'form-label'},'Full Name *'),h('input',{className:'input-field',type:'text',value:rn,onChange:e=>setRN(e.target.value),placeholder:'John Doe',required:true})),
+            h('div',null,h('label',{className:'form-label'},'Email *'),h('input',{className:'input-field',type:'email',value:re,onChange:e=>setRE(e.target.value),placeholder:'you@example.com',required:true})),
+            h('div',null,h('label',{className:'form-label'},'Phone'),h('input',{className:'input-field',type:'tel',value:rph,onChange:e=>setRPh(e.target.value),placeholder:'+1 (555) 000-0000'})),
+            h('div',null,h('label',{className:'form-label'},'Password *'),h('input',{className:'input-field',type:'password',value:rp,onChange:e=>setRP(e.target.value),placeholder:'At least 6 characters',required:true})),
+            h('div',null,h('label',{className:'form-label'},'Confirm Password *'),h('input',{className:'input-field',type:'password',value:rp2,onChange:e=>setRP2(e.target.value),placeholder:'Repeat password',required:true})),
+            rerr&&h('div',{className:'error-box'},rerr),
+            h('button',{type:'submit',className:'btn-orange',style:{padding:'14px',fontSize:'15px',width:'100%'},disabled:rl},rl?'Creating account...':'Create Account'),
+            h('p',{style:{textAlign:'center',fontSize:'13px',color:'#64748b'}},'Already registered? ',h('button',{type:'button',onClick:()=>sw('login'),style:{color:'#f97316',fontWeight:700,background:'none',border:'none',cursor:'pointer'}},'Sign in'))
+          )
+    )
+  );
+}
+
+/* ════════════════════════════════════════════
+   DASHBOARD FIELD HELPER
+════════════════════════════════════════════ */
+function DF(label,value,onChange,opts={}){
+  return h('div',null,
+    h('label',{className:'form-label'},label),
+    h('input',{className:'input-field',type:opts.type||'text',value,onChange:e=>onChange(e.target.value),required:opts.required||false,placeholder:opts.placeholder||''})
+  );
+}
+
+/* ════════════════════════════════════════════
+   USER DASHBOARD
+════════════════════════════════════════════ */
+function Dashboard({user,onLogout}){
+  const [view,setView]=useState('overview');
+  const [ships,setShips]=useState([]);
+  const [loading,setLoading]=useState(false);
+  const [form,setForm]=useState(emptyForm());
+  const [busy,setBusy]=useState(false);
+  const [msg,setMsg]=useState('');
+  const [err,setErr]=useState('');
+  const fv=(f,v)=>setForm(p=>({...p,[f]:v}));
+
+  const load=useCallback(async()=>{
+    setLoading(true);
+    try{ const r=await db.get('dashex_shipments',`&user_id=eq.${user.id}&order=created_at.desc`); setShips(r); }
+    catch{}finally{setLoading(false);}
+  },[user.id]);
+
+  useEffect(()=>{ load(); },[load]);
+
+  const submit=async e=>{
+    e.preventDefault(); setErr(''); setBusy(true);
+    try{
+      const tn=genTN();
+      const today=new Date().toISOString().split('T')[0];
+      const now=new Date().toTimeString().slice(0,5);
+      const [s]=await db.post('dashex_shipments',{
+        tracking_number:tn, user_id:user.id,
+        sender_name:user.name, sender_email:user.email, sender_phone:user.phone||null,
+        receiver_name:form.receiverName, receiver_email:form.receiverEmail||null, receiver_phone:form.receiverPhone||null,
+        receiver_address:form.receiverAddress||null, receiver_city:form.receiverCity, receiver_country:form.receiverCountry,
+        description:form.description, weight:form.weight||null, dimensions:form.dimensions||null,
+        package_type:form.packageType, quantity:form.quantity, service_type:form.serviceType,
+        origin:form.origin, destination:form.destination,
+        estimated_delivery:form.estimatedDelivery||null,
+        current_status:'Order Placed', current_location:form.origin,
+        special_instructions:form.specialInstructions||null,
+      });
+      await db.post('dashex_tracking_events',{shipment_id:s.id,status:'Order Placed',location:form.origin,description:'Shipment request received and registered.',event_date:today,event_time:now});
+      setMsg(`Shipment submitted! Tracking: ${tn}`);
+      setForm(emptyForm());
+      await load();
+      setView('shipments');
+      setTimeout(()=>setMsg(''),12000);
+    }catch{setErr('Submission failed. Please try again.');}
+    finally{setBusy(false);}
+  };
+
+  const navItems=[
+    {key:'overview', label:'Overview',     svg:`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>`},
+    {key:'new',      label:'New Shipment', svg:`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`},
+    {key:'shipments',label:'My Shipments', svg:`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>`},
+    {key:'profile',  label:'My Profile',   svg:`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`},
+  ];
+
+  return h('div',{style:{minHeight:'100vh',background:'#f0f4f8',fontFamily:'Inter,sans-serif'}},
+    /* topbar */
+    h('div',{style:{background:'#0a1628',padding:'12px 16px',boxShadow:'0 4px 24px rgba(0,0,0,0.3)',display:'flex',alignItems:'center',justifyContent:'space-between'}},
+      h('div',{style:{cursor:'pointer'},onClick:()=>nav('#/')},h(Logo,{size:'sm'})),
+      h('div',{style:{display:'flex',alignItems:'center',gap:'16px'}},
+        h('span',{style:{color:'#94a3b8',fontSize:'14px'}},'Hello, ',h('span',{style:{color:'#fb923c',fontWeight:700}},user.name)),
+        h('button',{onClick:()=>{clearSession();onLogout();},style:{color:'#94a3b8',fontSize:'14px',fontWeight:600,background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:'8px',padding:'6px 14px',cursor:'pointer'},onMouseEnter:e=>{e.currentTarget.style.color='#f87171';},onMouseLeave:e=>{e.currentTarget.style.color='#94a3b8';}},'Sign Out')
+      )
+    ),
+    h('div',{style:{display:'flex'}},
+      /* sidebar */
+      h('div',{className:'dash-sidebar'},
+        h('div',{style:{marginBottom:'24px',paddingBottom:'24px',borderBottom:'1px solid rgba(255,255,255,0.06)'}},
+          h('div',{style:{width:'48px',height:'48px',borderRadius:'50%',background:'#f97316',display:'flex',alignItems:'center',justifyContent:'center',marginBottom:'12px'}},h('span',{style:{color:'#fff',fontWeight:900,fontSize:'20px'}},user.name.charAt(0).toUpperCase())),
+          h('div',{style:{color:'#fff',fontWeight:700,fontSize:'15px'}},user.name),
+          h('div',{style:{color:'#64748b',fontSize:'12px'}},user.email)
+        ),
+        navItems.map(it=>h('button',{key:it.key,className:`dash-nav-item${view===it.key?' active':''}`,onClick:()=>setView(it.key)},h('div',{dangerouslySetInnerHTML:{__html:it.svg},style:{width:18,height:18,flexShrink:0}}),it.label)),
+        h('div',{style:{flex:1}}),
+        h('button',{onClick:()=>nav('#/'),style:{display:'flex',alignItems:'center',gap:'10px',padding:'10px 16px',color:'#475569',fontSize:'13px',fontWeight:500,background:'none',border:'none',cursor:'pointer'}},
+          h('div',{dangerouslySetInnerHTML:{__html:`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>`},style:{width:16,height:16}}),'Back to Site')
+      ),
+      /* content */
+      h('div',{style:{flex:1,padding:'32px 24px',overflowX:'hidden'}},
+        msg&&h('div',{className:'success-banner'},msg),
+
+        /* OVERVIEW */
+        view==='overview'&&h('div',null,
+          h('h1',{style:{fontSize:'24px',fontWeight:900,color:'#0a1628',marginBottom:'4px'}},`Welcome back, ${user.name.split(' ')[0]}`),
+          h('p',{style:{color:'#64748b',marginBottom:'32px'}},'Manage your shipments and track your cargo'),
+          h('div',{className:'grid-3',style:{marginBottom:'32px'}},
+            [{label:'Total Shipments',value:ships.length,color:'#f97316'},{label:'In Transit',value:ships.filter(s=>s.current_status==='In Transit').length,color:'#3b82f6'},{label:'Delivered',value:ships.filter(s=>s.current_status==='Delivered').length,color:'#22c55e'}]
+            .map(m=>h('div',{key:m.label,className:'dash-card',style:{textAlign:'center'}},h('div',{style:{fontSize:'36px',fontWeight:900,color:m.color,marginBottom:'4px'}},m.value),h('div',{style:{color:'#64748b',fontSize:'14px',fontWeight:500}},m.label)))
+          ),
+          loading?h('div',{style:{textAlign:'center',padding:'32px'}},h('div',{className:'spinner'})):
+          ships.length===0
+            ?h('div',{className:'dash-card',style:{textAlign:'center',padding:'48px 24px'}},
+                h('h3',{style:{fontWeight:700,color:'#0a1628',marginBottom:'8px'}},'No Shipments Yet'),
+                h('p',{style:{color:'#94a3b8',fontSize:'14px',marginBottom:'24px'}},'Submit your first shipment request to get started'),
+                h('button',{className:'btn-orange',style:{padding:'12px 32px'},onClick:()=>setView('new')},'Send a Shipment'))
+            :h('div',null,h('h3',{style:{fontWeight:700,color:'#0a1628',marginBottom:'16px',fontSize:'16px'}},'Recent Shipments'),ships.slice(0,3).map(s=>h(SRow,{key:s.id,s})))
+        ),
+
+        /* NEW SHIPMENT */
+        view==='new'&&h('div',null,
+          h('h1',{style:{fontSize:'24px',fontWeight:900,color:'#0a1628',marginBottom:'24px'}},'New Shipment Request'),
+          h('form',{onSubmit:submit},
+            h('div',{className:'dash-card'},
+              h('h2',{style:{fontWeight:700,color:'#0a1628',marginBottom:'20px',fontSize:'15px',borderBottom:'1px solid #f1f5f9',paddingBottom:'12px'}},'Recipient Details'),
+              h('div',{style:{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(200px,1fr))',gap:'16px'}},
+                DF('Full Name *',form.receiverName,v=>fv('receiverName',v),{required:true}),
+                DF('Email',form.receiverEmail,v=>fv('receiverEmail',v),{type:'email'}),
+                DF('Phone',form.receiverPhone,v=>fv('receiverPhone',v)),
+                DF('Address',form.receiverAddress,v=>fv('receiverAddress',v)),
+                DF('City *',form.receiverCity,v=>fv('receiverCity',v),{required:true}),
+                DF('Country *',form.receiverCountry,v=>fv('receiverCountry',v),{required:true})
+              )
+            ),
+            h('div',{className:'dash-card'},
+              h('h2',{style:{fontWeight:700,color:'#0a1628',marginBottom:'20px',fontSize:'15px',borderBottom:'1px solid #f1f5f9',paddingBottom:'12px'}},'Package Details'),
+              h('div',{style:{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(200px,1fr))',gap:'16px'}},
+                h('div',{style:{gridColumn:'span 2'}},DF('Description *',form.description,v=>fv('description',v),{required:true,placeholder:'e.g. Electronics, Documents'})),
+                DF('Weight (e.g. 2.5 kg) *',form.weight,v=>fv('weight',v),{required:true}),
+                DF('Dimensions (e.g. 30x20x15 cm)',form.dimensions,v=>fv('dimensions',v)),
+                h('div',null,h('label',{className:'form-label'},'Package Type'),h('select',{className:'input-field',value:form.packageType,onChange:e=>fv('packageType',e.target.value)},PACKAGE_TYPES.map(p=>h('option',{key:p},p)))),
+                h('div',null,h('label',{className:'form-label'},'Quantity'),h('input',{className:'input-field',type:'number',min:1,value:form.quantity,onChange:e=>fv('quantity',parseInt(e.target.value)||1)}))
+              )
+            ),
+            h('div',{className:'dash-card'},
+              h('h2',{style:{fontWeight:700,color:'#0a1628',marginBottom:'20px',fontSize:'15px',borderBottom:'1px solid #f1f5f9',paddingBottom:'12px'}},'Shipment Details'),
+              h('div',{style:{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(200px,1fr))',gap:'16px',marginBottom:'16px'}},
+                h('div',null,h('label',{className:'form-label'},'Service Type'),h('select',{className:'input-field',value:form.serviceType,onChange:e=>fv('serviceType',e.target.value)},SERVICE_OPTIONS.map(s=>h('option',{key:s},s)))),
+                DF('Origin (City, Country) *',form.origin,v=>fv('origin',v),{required:true,placeholder:'New York, USA'}),
+                DF('Destination (City, Country) *',form.destination,v=>fv('destination',v),{required:true,placeholder:'London, UK'}),
+                h('div',null,h('label',{className:'form-label'},'Preferred Delivery Date'),h('input',{className:'input-field',type:'date',value:form.estimatedDelivery,onChange:e=>fv('estimatedDelivery',e.target.value)}))
+              ),
+              h('div',null,h('label',{className:'form-label'},'Special Instructions'),h('textarea',{className:'input-field',value:form.specialInstructions,onChange:e=>fv('specialInstructions',e.target.value),rows:2,placeholder:'Fragile, Keep Dry, etc.',style:{resize:'vertical'}}))
+            ),
+            err&&h('div',{className:'error-box',style:{marginBottom:'16px'}},err),
+            h('div',{style:{display:'flex',gap:'16px',paddingBottom:'32px'}},
+              h('button',{type:'submit',className:'btn-orange',style:{flex:1,padding:'16px',fontSize:'17px',fontWeight:900,borderRadius:'16px'},disabled:busy},busy?'Submitting...':'Submit Shipment Request'),
+              h('button',{type:'button',onClick:()=>setView('overview'),style:{background:'#f1f5f9',color:'#475569',fontWeight:600,padding:'16px 32px',borderRadius:'16px',border:'none',cursor:'pointer',fontSize:'15px'}},'Cancel')
+            )
+          )
+        ),
+
+        /* MY SHIPMENTS */
+        view==='shipments'&&h('div',null,
+          h('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'24px',flexWrap:'wrap',gap:'12px'}},
+            h('h1',{style:{fontSize:'24px',fontWeight:900,color:'#0a1628'}},'My Shipments'),
+            h('button',{className:'btn-orange',style:{padding:'10px 24px'},onClick:()=>setView('new')},'+ New Shipment')
+          ),
+          loading?h('div',{style:{textAlign:'center',padding:'32px'}},h('div',{className:'spinner'})):
+          ships.length===0?h('div',{className:'dash-card',style:{textAlign:'center',padding:'48px'}},h('p',{style:{color:'#94a3b8'}},'No shipments yet. '),h('button',{onClick:()=>setView('new'),style:{color:'#f97316',fontWeight:700,background:'none',border:'none',cursor:'pointer'}},'Submit your first one.')):
+          ships.map(s=>h(SRow,{key:s.id,s}))
+        ),
+
+        /* PROFILE */
+        view==='profile'&&h('div',null,
+          h('h1',{style:{fontSize:'24px',fontWeight:900,color:'#0a1628',marginBottom:'24px'}},'My Profile'),
+          h('div',{className:'dash-card'},
+            h('div',{style:{display:'flex',alignItems:'center',gap:'20px',marginBottom:'28px',paddingBottom:'24px',borderBottom:'1px solid #f1f5f9'}},
+              h('div',{style:{width:'72px',height:'72px',borderRadius:'50%',background:'#f97316',display:'flex',alignItems:'center',justifyContent:'center'}},h('span',{style:{color:'#fff',fontWeight:900,fontSize:'28px'}},user.name.charAt(0).toUpperCase())),
+              h('div',null,h('div',{style:{fontWeight:700,fontSize:'20px',color:'#0a1628'}},user.name),h('div',{style:{color:'#64748b',fontSize:'14px'}},user.email),h('div',{style:{color:'#94a3b8',fontSize:'12px',marginTop:'4px'}},'Member since ',fmtDate(user.created_at)))
+            ),
+            [['Name',user.name],['Email',user.email],['Phone',user.phone||'Not provided'],['Account ID',user.id.slice(0,8).toUpperCase()]].map(([k,v])=>
+              h('div',{key:k,style:{display:'flex',justifyContent:'space-between',padding:'14px 0',borderBottom:'1px solid #f8fafc',fontSize:'14px'}},h('span',{style:{color:'#94a3b8',fontWeight:600}},k),h('span',{style:{color:'#0a1628',fontWeight:600}},v))
+            )
+          )
+        )
+      )
+    )
+  );
+}
+
+/* ════════════════════════════════════════════
+   SHIPMENT MAP (Leaflet)
+════════════════════════════════════════════ */
+function ShipMap({ship, events}){
+  const mapRef    = useRef(null);
+  const mapInst   = useRef(null);
+
+  useEffect(()=>{
+    if(!mapRef.current || !window.L) return;
+    if(mapInst.current){ try{mapInst.current.remove();}catch{} mapInst.current=null; }
+
+    // Collect all coordinate points
+    const pts=[];
+    if(ship.sender_lat && ship.sender_lng)
+      pts.push({lat:+ship.sender_lat, lng:+ship.sender_lng, type:'origin',
+        label:'<b>Origin</b><br>'+(ship.origin||ship.sender_address||'Sender')});
+
+    // events ordered newest→oldest in DB, reverse so oldest is first on map path
+    const orderedEvs=[...events].filter(e=>e.location_lat&&e.location_lng).reverse();
+    orderedEvs.forEach(e=>
+      pts.push({lat:+e.location_lat, lng:+e.location_lng, type:'transit',
+        label:`<b>${e.status}</b>${e.location?'<br>'+e.location:''}<br><span style="color:#94a3b8;font-size:11px">${e.event_date||''} ${e.event_time||''}</span>`}));
+
+    if(ship.receiver_lat && ship.receiver_lng)
+      pts.push({lat:+ship.receiver_lat, lng:+ship.receiver_lng, type:'dest',
+        label:'<b>Destination</b><br>'+(ship.destination||ship.receiver_city||'Receiver')});
+
+    if(!pts.length) return; // no coordinates — map stays hidden
+
+    const center=[pts[Math.floor(pts.length/2)].lat, pts[Math.floor(pts.length/2)].lng];
+    const map=L.map(mapRef.current,{zoomControl:true,scrollWheelZoom:false}).setView(center,4);
+    mapInst.current=map;
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+      {attribution:'© <a href="https://openstreetmap.org">OpenStreetMap</a>',maxZoom:18}).addTo(map);
+
+    // Route polyline
+    if(pts.length>1)
+      L.polyline(pts.map(p=>[p.lat,p.lng]),
+        {color:'#f97316',weight:2.5,opacity:.85,dashArray:'8 5'}).addTo(map);
+
+    pts.forEach((p,i)=>{
+      const isLatest = p.type==='transit' && i===pts.length-2; // last transit before dest
+      if(p.type==='transit'){
+        const r = isLatest ? 11 : 7;
+        L.circleMarker([p.lat,p.lng],{radius:r,fillColor:isLatest?'#f97316':'#fb923c',color:'#fff',weight:2,fillOpacity:1})
+          .addTo(map).bindPopup(p.label);
+      } else {
+        const color=p.type==='dest'?'#22c55e':'#3b82f6';
+        const sz = 18;
+        const icon=L.divIcon({
+          html:`<div style="background:${color};width:${sz}px;height:${sz}px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center">
+            <div style="width:6px;height:6px;background:rgba(255,255,255,0.9);border-radius:50%"></div></div>`,
+          iconSize:[sz,sz],iconAnchor:[sz/2,sz/2],className:''
+        });
+        L.marker([p.lat,p.lng],{icon}).addTo(map).bindPopup(p.label);
+      }
+    });
+
+    if(pts.length>1){
+      const bounds=L.latLngBounds(pts.map(p=>[p.lat,p.lng]));
+      map.fitBounds(bounds,{padding:[32,32],maxZoom:10});
+    }
+    return()=>{ try{mapInst.current?.remove();}catch{} };
+  },[ship,events]);
+
+  const hasCoords=(ship.sender_lat&&ship.sender_lng)||(ship.receiver_lat&&ship.receiver_lng)||events.some(e=>e.location_lat&&e.location_lng);
+  if(!hasCoords) return null;
+
+  return h('div',{style:{background:'#fff',borderRadius:'16px',padding:'24px',marginBottom:'24px',boxShadow:'0 1px 3px rgba(0,0,0,0.06)',border:'1px solid #f1f5f9'}},
+    h('h3',{style:{fontWeight:700,color:'#0a1628',marginBottom:'16px',fontSize:'15px'}},'Live Route Map'),
+    h('div',{ref:mapRef,style:{height:'320px',borderRadius:'12px',overflow:'hidden',border:'1px solid #e8edf2',background:'#f0f4f8'}}),
+    h('div',{className:'map-legend'},
+      h('div',{className:'map-legend-item'},h('div',{className:'map-legend-dot',style:{background:'#3b82f6'}}), 'Origin'),
+      h('div',{className:'map-legend-item'},h('div',{className:'map-legend-dot',style:{background:'#f97316'}}), 'In Transit'),
+      h('div',{className:'map-legend-item'},h('div',{className:'map-legend-dot',style:{background:'#22c55e'}}), 'Destination'),
+    )
+  );
+}
+
+function SRow({s}){
+  const bg=STATUS_BG[s.current_status]||'#64748b';
+  return h('div',{className:'dash-card',style:{marginBottom:'12px',cursor:'pointer',transition:'box-shadow 0.2s'},onMouseEnter:e=>e.currentTarget.style.boxShadow='0 8px 24px rgba(0,0,0,0.1)',onMouseLeave:e=>e.currentTarget.style.boxShadow='0 1px 3px rgba(0,0,0,0.04)'},
+    h('div',{style:{display:'flex',flexWrap:'wrap',alignItems:'flex-start',justifyContent:'space-between',gap:'12px'}},
+      h('div',{style:{flex:1,minWidth:0}},
+        h('div',{style:{display:'flex',alignItems:'center',gap:'10px',flexWrap:'wrap',marginBottom:'6px'}},
+          h('span',{style:{fontFamily:'monospace',fontWeight:700,color:'#f97316',fontSize:'16px'}},s.tracking_number),
+          h('span',{className:'status-badge',style:{background:bg}},s.current_status)
+        ),
+        h('div',{style:{fontSize:'14px',color:'#475569',marginBottom:'4px'}},h('span',{style:{color:'#94a3b8'}},'To: '),s.receiver_name,' — ',s.destination),
+        h('div',{style:{fontSize:'12px',color:'#94a3b8'}},'Submitted ',fmtDate(s.created_at),' · ',s.service_type)
+      ),
+      h('a',{href:`#/track/${s.tracking_number}`,style:{background:'#fff7ed',border:'1px solid #fed7aa',color:'#ea580c',fontSize:'13px',fontWeight:600,padding:'8px 16px',borderRadius:'8px',display:'inline-block',whiteSpace:'nowrap'}},'Track')
+    )
+  );
+}
+
+/* ════════════════════════════════════════════
+   MAIN SITE
+════════════════════════════════════════════ */
+function MainSite(){
+  const imgs=useSiteImages();
+  // hero_image overrides slot 1 if set; hero1-4 override individual slots
+  const heroes=[
+    imgs.hero1||(imgs.hero_image||DEFAULT_HEROES[0]),
+    imgs.hero2||DEFAULT_HEROES[1],
+    imgs.hero3||DEFAULT_HEROES[2],
+    imgs.hero4||DEFAULT_HEROES[3],
+  ];
+  const [hi,setHi]=useState(0); const [ti,setTi]=useState(0); const [fade,setFade]=useState(true);
+  const [track,setTrack]=useState(''); const [mob,setMob]=useState(false); const [scrolled,setScrolled]=useState(false);
+  const [showAuth,setShowAuth]=useState(false); const [authTab,setAuthTab]=useState('login');
+  const [user,setUser]=useState(getSession());
+
+  useEffect(()=>{const iv=setInterval(()=>{setFade(false);setTimeout(()=>{setHi(p=>(p+1)%heroes.length);setTi(p=>(p+1)%HERO_TEXTS.length);setFade(true);},600);},5000);return()=>clearInterval(iv);},[]);
+  useEffect(()=>{const fn=()=>setScrolled(window.scrollY>60);window.addEventListener('scroll',fn);return()=>window.removeEventListener('scroll',fn);},[]);
+
+  const scrollTo=id=>{document.getElementById(id)?.scrollIntoView({behavior:'smooth'});setMob(false);};
+  const doTrack=e=>{e.preventDefault();if(track.trim())nav(`#/track/${track.trim()}`);};
+  const openAuth=tab=>{setAuthTab(tab);setShowAuth(true);};
+  const handleAuth=u=>{setUser(u);setShowAuth(false);nav('#/dashboard');};
+  const navL=['home','services','tracking','about','contact'];
+
+  return h('div',{style:{fontFamily:'Inter,sans-serif',background:'#fff',color:'#1e293b',overflowX:'hidden'}},
+    showAuth&&h(AuthModal,{tab0:authTab,onClose:()=>setShowAuth(false),onAuth:handleAuth}),
+
+    /* NAV */
+    h('nav',{style:{position:'fixed',top:0,left:0,right:0,zIndex:50,transition:'all 0.3s',background:scrolled?'#0a1628':'rgba(10,22,40,0.85)',backdropFilter:scrolled?'none':'blur(12px)',padding:scrolled?'8px 0':'16px 0',boxShadow:scrolled?'0 4px 24px rgba(0,0,0,0.3)':'none'}},
+      h('div',{className:'max-w-7xl',style:{display:'flex',alignItems:'center',justifyContent:'space-between'}},
+        h('div',{style:{cursor:'pointer'},onClick:()=>scrollTo('home')},h(Logo,{url:imgs.logo})),
+        h('div',{className:'desktop-nav',style:{display:'flex',alignItems:'center',gap:'32px'}},
+          ...navL.map(s=>h('button',{key:s,onClick:()=>scrollTo(s),style:{color:'#cbd5e1',fontSize:'14px',fontWeight:500,textTransform:'capitalize',transition:'color 0.2s',background:'none',border:'none',cursor:'pointer'}},s==='tracking'?'Track Shipment':s))
+        ),
+        h('div',{className:'desktop-nav',style:{display:'flex',gap:'8px',alignItems:'center'}},
+          user
+            ?h('button',{onClick:()=>nav('#/dashboard'),className:'btn-orange',style:{padding:'8px 20px',fontSize:'14px'}},user.name.split(' ')[0]+"'s Account")
+            :h(React.Fragment,null,
+                h('button',{onClick:()=>openAuth('login'),style:{color:'#cbd5e1',fontSize:'14px',fontWeight:600,background:'none',border:'none',cursor:'pointer',padding:'8px 16px'}},'Sign In'),
+                h('button',{onClick:()=>openAuth('register'),className:'btn-orange',style:{padding:'8px 20px',fontSize:'14px'}},'Get Started')
+              )
+        ),
+        h('button',{className:'hamburger',style:{display:'none',color:'#fff',fontSize:'22px',background:'none',border:'none'},onClick:()=>setMob(o=>!o)},mob?'x':'=')
+      ),
+      mob&&h('div',{style:{background:'#0a1628',borderTop:'1px solid rgba(255,255,255,0.1)',padding:'16px',display:'flex',flexDirection:'column',gap:'16px'}},
+        ...navL.map(s=>h('button',{key:s,onClick:()=>scrollTo(s),style:{color:'#cbd5e1',fontSize:'14px',fontWeight:500,textAlign:'left',background:'none',border:'none',cursor:'pointer',textTransform:'capitalize'}},s==='tracking'?'Track Shipment':s)),
+        user
+          ?h('button',{onClick:()=>{nav('#/dashboard');setMob(false);},className:'btn-orange',style:{padding:'10px',fontSize:'14px',textAlign:'center'}},'My Account')
+          :h('button',{onClick:()=>{openAuth('login');setMob(false);},className:'btn-orange',style:{padding:'10px',fontSize:'14px',textAlign:'center'}},'Sign In / Register')
+      )
+    ),
+
+    /* HERO */
+    h('section',{id:'home',style:{position:'relative',minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',overflow:'hidden'}},
+      h('div',{style:{position:'absolute',inset:0,backgroundImage:`url('${heroes[hi]}')`,backgroundSize:'cover',backgroundPosition:'center',opacity:fade?1:0,transition:'opacity 0.7s'}}),
+      h('div',{style:{position:'absolute',inset:0,background:'linear-gradient(to bottom,rgba(10,22,40,0.8),rgba(10,22,40,0.6),rgba(10,22,40,0.9)'}}),
+      h('div',{style:{position:'relative',zIndex:10,textAlign:'center',padding:'0 16px',maxWidth:'900px',width:'100%',margin:'0 auto'}},
+        h('div',{style:{display:'inline-flex',alignItems:'center',gap:'8px',background:'rgba(249,115,22,0.2)',border:'1px solid rgba(249,115,22,0.4)',borderRadius:'999px',padding:'6px 16px',marginBottom:'24px'}},
+          h('span',{className:'animate-pulse',style:{width:'8px',height:'8px',borderRadius:'50%',background:'#fb923c',display:'inline-block'}}),
+          h('span',{style:{color:'#fdba74',fontSize:'14px',fontWeight:500}},'Open 24/7 for Global Logistics')
+        ),
+        h('div',{style:{opacity:fade?1:0,transition:'opacity 0.5s'}},
+          h('h1',{style:{fontSize:'clamp(2.5rem,8vw,5rem)',fontWeight:900,color:'#fff',lineHeight:1.1,marginBottom:'8px'}},HERO_TEXTS[ti].headline),
+          h('h2',{style:{fontSize:'clamp(1.5rem,5vw,3rem)',fontWeight:700,color:'#fb923c',marginBottom:'24px'}},HERO_TEXTS[ti].sub)
+        ),
+        h('p',{style:{color:'#cbd5e1',fontSize:'clamp(16px,2vw,20px)',maxWidth:'640px',margin:'0 auto 40px',lineHeight:1.7}},'We offer a full range of global freight services with unmatched reliability and speed, tailored to meet your business needs worldwide.'),
+        h('form',{onSubmit:doTrack,style:{display:'flex',gap:'12px',justifyContent:'center',maxWidth:'560px',margin:'0 auto 20px',flexWrap:'wrap'}},
+          h('input',{type:'text',value:track,onChange:e=>setTrack(e.target.value),placeholder:'Enter tracking number...',style:{flex:'1',minWidth:'200px',background:'rgba(255,255,255,0.1)',backdropFilter:'blur(8px)',border:'1.5px solid rgba(255,255,255,0.2)',borderRadius:'12px',padding:'14px 20px',color:'#fff',fontSize:'14px',outline:'none'}}),
+          h('button',{type:'submit',className:'btn-orange',style:{padding:'14px 32px',fontSize:'14px',whiteSpace:'nowrap'}},'Track Now')
+        ),
+        h('div',{style:{display:'flex',gap:'12px',justifyContent:'center',flexWrap:'wrap'}},
+          user
+            ?h('button',{onClick:()=>nav('#/dashboard'),style:{background:'rgba(255,255,255,0.1)',border:'1.5px solid rgba(255,255,255,0.25)',color:'#fff',fontWeight:600,padding:'12px 28px',fontSize:'14px',borderRadius:'12px',cursor:'pointer'}},'My Account')
+            :h(React.Fragment,null,
+                h('button',{onClick:()=>openAuth('register'),className:'btn-orange',style:{padding:'12px 28px',fontSize:'14px'}},'Send a Shipment'),
+                h('button',{onClick:()=>openAuth('login'),style:{background:'rgba(255,255,255,0.1)',border:'1.5px solid rgba(255,255,255,0.25)',color:'#fff',fontWeight:600,padding:'12px 28px',fontSize:'14px',borderRadius:'12px',cursor:'pointer'}},'Sign In')
+              )
+        ),
+        h('div',{className:'hero-dots'},heroes.map((_,i)=>h('button',{key:i,className:`hero-dot${i===hi?' active':''}`,onClick:()=>{setFade(false);setTimeout(()=>{setHi(i);setTi(i);setFade(true);},300);}})))
+      ),
+      h('div',{style:{position:'absolute',bottom:'32px',left:'50%',transform:'translateX(-50%)',display:'flex',flexDirection:'column',alignItems:'center',gap:'4px',color:'rgba(255,255,255,0.4)'}},
+        h('span',{style:{fontSize:'11px',fontWeight:600,letterSpacing:'0.15em',textTransform:'uppercase'}},'Scroll Down'),
+        h('div',{className:'animate-pulse',style:{width:'1px',height:'32px',background:'rgba(255,255,255,0.3)'}})
+      )
+    ),
+
+    /* TRACK SECTION */
+    h('section',{id:'tracking',style:{background:'#0d1f3c',padding:'80px 16px',position:'relative',overflow:'hidden'}},
+      imgs.tracking_image&&h('div',{style:{position:'absolute',inset:0,backgroundImage:`url('${imgs.tracking_image}')`,backgroundSize:'cover',backgroundPosition:'center',opacity:0.08,pointerEvents:'none'}}),
+      h('div',{className:'max-w-3xl',style:{textAlign:'center',position:'relative',zIndex:1}},
+        h('p',{className:'section-label'},'Track & Trace'),
+        h('h2',{style:{fontSize:'clamp(1.8rem,4vw,2.5rem)',fontWeight:900,color:'#fff',marginBottom:'12px'}},'Track Your Shipment'),
+        h('p',{style:{color:'#94a3b8',marginBottom:'40px',fontSize:'17px'}},'Enter your tracking number to get real-time updates on your package'),
+        h('form',{onSubmit:doTrack,style:{display:'flex',gap:'12px',flexWrap:'wrap'}},
+          h('input',{className:'input-dark',style:{flex:'1',minWidth:'200px'},type:'text',value:track,onChange:e=>setTrack(e.target.value),placeholder:'e.g. DCX1A2B3C4D'}),
+          h('button',{type:'submit',className:'btn-orange',style:{padding:'14px 40px',fontSize:'15px'}},'Track')
+        ),
+        h('p',{style:{color:'#475569',fontSize:'12px',marginTop:'12px'}},'Tracking numbers start with ',h('span',{style:{color:'#fb923c',fontFamily:'monospace',fontWeight:700}},'DCX'))
+      )
+    ),
+
+    /* SERVICES */
+    h('section',{id:'services',style:{padding:'96px 16px',background:'#fff'}},
+      h('div',{className:'max-w-7xl'},
+        h('div',{style:{textAlign:'center',marginBottom:'64px'}},h('p',{className:'section-label'},'Our Services'),h('h2',{className:'section-title'},'Comprehensive Logistics Solutions'),h('p',{className:'section-sub'},'Shipping and logistics solutions tailored to your business needs')),
+        h('div',{className:'grid-3'},SERVICES.map(s=>h('div',{key:s.title,className:'card-hover',style:{background:'#fff',border:'1px solid #f1f5f9',borderRadius:'16px',padding:'32px',boxShadow:'0 1px 3px rgba(0,0,0,0.05)'}},h('div',{dangerouslySetInnerHTML:{__html:s.icon},style:{marginBottom:'16px'}}),h('h3',{style:{fontSize:'18px',fontWeight:700,color:'#0a1628',marginBottom:'12px'}},s.title),h('p',{style:{color:'#64748b',lineHeight:1.7,fontSize:'14px'}},s.desc))))
+      )
+    ),
+
+    /* DELIVERY / WAREHOUSE VISUAL — only renders when images are set in admin */
+    (imgs.delivery_image||imgs.warehouse_image)&&h('section',{style:{padding:'0',overflow:'hidden',display:'grid',gridTemplateColumns:imgs.delivery_image&&imgs.warehouse_image?'1fr 1fr':'1fr'}},
+      imgs.delivery_image&&h('div',{style:{position:'relative',minHeight:'340px',overflow:'hidden'}},
+        h('img',{src:imgs.delivery_image,alt:'Delivery',loading:'lazy',style:{width:'100%',height:'100%',objectFit:'cover',position:'absolute',inset:0}}),
+        h('div',{style:{position:'absolute',inset:0,background:'linear-gradient(to top,rgba(10,22,40,0.85),rgba(10,22,40,0.2))',display:'flex',alignItems:'flex-end',padding:'32px'}}),
+        h('div',{style:{position:'absolute',bottom:'32px',left:'32px',color:'#fff'}},
+          h('div',{style:{color:'#fb923c',fontWeight:700,fontSize:'11px',letterSpacing:'0.1em',textTransform:'uppercase',marginBottom:'6px'}},'Express Delivery'),
+          h('div',{style:{fontWeight:900,fontSize:'clamp(1.2rem,3vw,1.8rem)',lineHeight:1.2}},'Door-to-Door.',h('br'),'Guaranteed.')
+        )
+      ),
+      imgs.warehouse_image&&h('div',{style:{position:'relative',minHeight:'340px',overflow:'hidden'}},
+        h('img',{src:imgs.warehouse_image,alt:'Warehouse',loading:'lazy',style:{width:'100%',height:'100%',objectFit:'cover',position:'absolute',inset:0}}),
+        h('div',{style:{position:'absolute',inset:0,background:'linear-gradient(to top,rgba(10,22,40,0.85),rgba(10,22,40,0.2))'}}),
+        h('div',{style:{position:'absolute',bottom:'32px',left:'32px',color:'#fff'}},
+          h('div',{style:{color:'#fb923c',fontWeight:700,fontSize:'11px',letterSpacing:'0.1em',textTransform:'uppercase',marginBottom:'6px'}},'Smart Warehousing'),
+          h('div',{style:{fontWeight:900,fontSize:'clamp(1.2rem,3vw,1.8rem)',lineHeight:1.2}},'Secure.',h('br'),'Scalable.',h('br'),'Real-Time.')
+        )
+      )
+    ),
+    h('section',{style:{padding:'96px 16px',background:'#f8fafd',position:'relative',overflow:'hidden'}},
+      imgs.security_image&&h('div',{style:{position:'absolute',right:0,top:0,bottom:0,width:'35%',backgroundImage:`url('${imgs.security_image}')`,backgroundSize:'cover',backgroundPosition:'center',opacity:0.07,pointerEvents:'none'}}),
+      h('div',{className:'max-w-7xl',style:{position:'relative',zIndex:1}},
+        h('div',{style:{textAlign:'center',marginBottom:'64px'}},h('p',{className:'section-label'},'Why Choose Us'),h('h2',{className:'section-title'},'Trusted by Thousands Worldwide'),h('p',{className:'section-sub'},'Reliable and professional logistics solutions for businesses of every size')),
+        h('div',{className:'grid-3'},FEATURES.map(f=>h('div',{key:f.title,className:'feature-card'},h('div',{dangerouslySetInnerHTML:{__html:f.icon},style:{flexShrink:0}}),h('div',null,h('h3',{style:{fontWeight:700,color:'#0a1628',marginBottom:'4px',fontSize:'15px'}},f.title),h('p',{style:{color:'#64748b',fontSize:'14px',lineHeight:1.7}},f.desc)))))
+      )
+    ),
+
+    /* ABOUT */
+    h('section',{id:'about',style:{background:'#0a1628',padding:'96px 16px'}},
+      h('div',{className:'max-w-7xl'},
+        h('div',{className:'about-grid'},
+          h('div',null,
+            h('p',{className:'section-label'},'About Us'),
+            h('h2',{style:{fontSize:'clamp(1.8rem,4vw,3rem)',fontWeight:900,color:'#fff',marginBottom:'24px',lineHeight:1.15}},'Our Impact &',h('br'),'Achievements'),
+            h('p',{style:{color:'#94a3b8',fontSize:'17px',lineHeight:1.8,marginBottom:'32px'}},'Delivering excellence across the globe with industry-leading standards. Since our founding, DashEx Cargo has grown into a trusted partner for businesses needing reliable, efficient logistics solutions across 160+ countries.'),
+            h('div',{style:{display:'flex',flexWrap:'wrap',gap:'12px'}},[{v:'11+',l:'Years Experience'},{v:'ISO 27001',l:'Security Certified'},{v:'8+',l:'Industry Awards'}].map(x=>h('div',{key:x.l,style:{background:'#152844',borderRadius:'12px',padding:'12px 20px'}},h('div',{style:{color:'#fb923c',fontWeight:700,fontSize:'18px'}},x.v),h('div',{style:{color:'#94a3b8',fontSize:'12px'}},x.l))))
+          ),
+          h('div',{className:'about-img'},h('img',{
+            src:imgs.about||IMG_DEFAULTS.about,
+            alt:'Operations Center',
+            loading:'lazy',
+            style:{width:'100%',height:'320px',objectFit:'cover'}
+          }))
+        ),
+        h('div',{className:'grid-4',style:{marginBottom:'24px'}},STATS.map(s=>h('div',{key:s.label,className:'stat-box'},h('div',{style:{fontSize:'clamp(1.5rem,3vw,2.5rem)',fontWeight:900,color:'#fb923c',marginBottom:'8px'}},s.value),h('div',{style:{color:'#94a3b8',fontSize:'14px',fontWeight:500}},s.label)))),
+        h('div',{className:'grid-3'},[{v:'99.8%',l:'On-Time Delivery',d:'Industry-leading performance across all methods'},{v:'Real-Time',l:'GPS Accuracy',d:'Minute-by-minute updates and GPS precision'},{v:'4.9/5',l:'Average Rating',d:'Outstanding client satisfaction across all services'}].map(x=>h('div',{key:x.l,className:'metric-card'},h('div',{style:{fontSize:'clamp(1.5rem,3vw,2.5rem)',fontWeight:900,color:'#fff',marginBottom:'4px'}},x.v),h('div',{style:{color:'#fdba74',fontWeight:600,fontSize:'14px',marginBottom:'4px'}},x.l),h('div',{style:{color:'#64748b',fontSize:'12px'}},x.d))))
+      )
+    ),
+
+    /* TESTIMONIALS */
+    h('section',{style:{background:'#fff',padding:'96px 16px'}},
+      h('div',{className:'max-w-7xl'},
+        h('div',{style:{textAlign:'center',marginBottom:'64px'}},h('p',{className:'section-label'},'Testimonials'),h('h2',{className:'section-title'},'What Our Clients Say'),h('p',{className:'section-sub'},'Hear from our satisfied customers about their experience with our logistics solutions')),
+        h('div',{className:'grid-3'},TESTIMONIALS.map(t=>h('div',{key:t.name,className:'testimonial-card'},
+          h('div',{style:{fontSize:'40px',color:'#fed7aa',fontFamily:'serif',lineHeight:1}},'"'),
+          h('p',{style:{color:'#475569',fontStyle:'italic',fontSize:'14px',lineHeight:1.8,flex:1}},`"${t.quote}"`),
+          h('div',{style:{display:'flex',alignItems:'center',gap:'12px',paddingTop:'12px',borderTop:'1px solid #e2e8f0'}},h('div',{style:{width:'40px',height:'40px',borderRadius:'50%',background:'#0a1628',display:'flex',alignItems:'center',justifyContent:'center',color:'#fb923c',fontWeight:700,fontSize:'14px',flexShrink:0}},t.initials),h('div',null,h('div',{style:{fontWeight:700,color:'#0a1628',fontSize:'14px'}},t.name),h('div',{style:{color:'#94a3b8',fontSize:'12px'}},t.role)))
+        )))
+      )
+    ),
+
+    /* CTA */
+    h('section',{id:'contact',style:{background:'linear-gradient(135deg,#0a1628,#102040,#0a1628)',padding:'96px 16px',textAlign:'center'}},
+      h('div',{style:{maxWidth:'720px',margin:'0 auto'}},
+        h('p',{className:'section-label'},'Get Started'),
+        h('h2',{style:{fontSize:'clamp(1.8rem,4vw,3rem)',fontWeight:900,color:'#fff',marginBottom:'24px'}},'Ready to Ship with Confidence?'),
+        h('p',{style:{color:'#94a3b8',fontSize:'17px',lineHeight:1.8,marginBottom:'40px'}},'Get started with our professional logistics services today. Create a free account and experience the DashEx difference.'),
+        h('div',{style:{display:'flex',flexWrap:'wrap',gap:'16px',justifyContent:'center'}},
+          h('button',{onClick:()=>openAuth('register'),className:'btn-orange',style:{padding:'16px 40px',fontSize:'15px',borderRadius:'12px'}},'Create Free Account'),
+          h('a',{href:'mailto:info@dashexcargo.com',style:{background:'rgba(255,255,255,0.1)',border:'1.5px solid rgba(255,255,255,0.2)',color:'#fff',fontWeight:600,padding:'16px 40px',fontSize:'15px',borderRadius:'12px',display:'inline-block'}},'Contact Us')
+        )
+      )
+    ),
+
+    /* FOOTER */
+    h('footer',{style:{background:'#060f1e',color:'#64748b',padding:'48px 16px 32px'}},
+      h('div',{className:'max-w-7xl'},
+        h('div',{className:'footer-grid'},
+          h('div',null,h('div',{style:{marginBottom:'16px',cursor:'pointer'},onClick:()=>window.scrollTo({top:0,behavior:'smooth'})},h(Logo,{size:'sm',url:imgs.logo})),h('p',{style:{color:'#fb923c',fontSize:'12px',fontStyle:'italic',marginBottom:'12px',letterSpacing:'0.05em'}},'Precision in Every Delivery'),h('p',{style:{fontSize:'14px',lineHeight:1.8,maxWidth:'280px'}},'A trusted global logistics partner delivering excellence across 160+ countries since 2013.')),
+          h('div',null,h('h4',{style:{color:'#fff',fontWeight:600,marginBottom:'16px',fontSize:'14px'}},'Services'),h('ul',{style:{listStyle:'none',display:'flex',flexDirection:'column',gap:'8px'}},['Air Freight','Sea Freight','Ground Transport','Warehousing','Express Delivery','Customs Clearance'].map(s=>h('li',{key:s},h('span',{style:{fontSize:'14px',cursor:'pointer',transition:'color 0.2s'},onMouseEnter:e=>e.target.style.color='#fb923c',onMouseLeave:e=>e.target.style.color=''},s))))),
+          h('div',null,h('h4',{style:{color:'#fff',fontWeight:600,marginBottom:'16px',fontSize:'14px'}},'Contact'),h('ul',{style:{listStyle:'none',display:'flex',flexDirection:'column',gap:'8px',fontSize:'14px'}},h('li',null,'info@dashexcargo.com'),h('li',null,'+1 (800) DASHEX-1'),h('li',null,'24/7 Support Available'),h('li',null,'160+ Countries Served')))
+        ),
+        h('div',{style:{borderTop:'1px solid rgba(255,255,255,0.05)',paddingTop:'24px',textAlign:'center',fontSize:'12px',color:'#334155'}},`© ${new Date().getFullYear()} DashEx Cargo. All rights reserved. | Precision in Every Delivery`)
+      )
+    )
+  );
+}
+
+/* ════════════════════════════════════════════
+   TRACKING PAGE
+════════════════════════════════════════════ */
+function TrackPage({tn:initTN}){
+  const [search,setSearch]=useState(initTN||'');
+  const [queried,setQueried]=useState(initTN||'');
+  const [ship,setShip]=useState(null);
+  const [events,setEvents]=useState([]);
+  const [loading,setLoading]=useState(!!initTN);
+  const [notFound,setNotFound]=useState(false);
+  const [dl,setDl]=useState(false);
+  const ref=useRef(null);
+
+  const fetch=useCallback(async tn=>{
+    if(!tn)return;
+    setLoading(true);setNotFound(false);setShip(null);setEvents([]);
+    try{
+      const rows=await db.get('dashex_shipments',`&tracking_number=eq.${encodeURIComponent(tn.toUpperCase())}`);
+      if(!rows.length){setNotFound(true);return;}
+      setShip(rows[0]);
+      const ev=await db.get('dashex_tracking_events',`&shipment_id=eq.${rows[0].id}&order=event_date.desc,event_time.desc`);
+      setEvents(ev);
+    }catch{setNotFound(true);}
+    finally{setLoading(false);}
+  },[]);
+
+  useEffect(()=>{if(initTN)fetch(initTN);},[initTN,fetch]);
+
+  const doSearch=e=>{e.preventDefault();const tn=search.trim().toUpperCase();if(tn){setQueried(tn);nav(`#/track/${tn}`);fetch(tn);}};
+
+  const download=async()=>{
+    if(!ref.current||!ship)return; setDl(true);
+    try{
+      const canvas=await html2canvas(ref.current,{scale:2,useCORS:true,backgroundColor:'#ffffff'});
+      const img=canvas.toDataURL('image/png');
+      const {jsPDF}=window.jspdf;
+      const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+      const pw=pdf.internal.pageSize.getWidth(),ph=(canvas.height*pw)/canvas.width;
+      let y=0,pgh=pdf.internal.pageSize.getHeight();
+      while(y<ph){if(y>0)pdf.addPage();pdf.addImage(img,'PNG',0,-y,pw,ph);y+=pgh;}
+      pdf.save(`DashEx-${ship.tracking_number}.pdf`);
+    }finally{setDl(false);}
+  };
+
+  const si=ship?stepIdx(ship.current_status):-1;
+  const sbg=ship?(STATUS_BG[ship.current_status]||'#f97316'):'#f97316';
+
+  return h('div',{style:{minHeight:'100vh',background:'#f0f4f8',fontFamily:'Inter,sans-serif'}},
+    h('div',{style:{background:'#0a1628',padding:'24px 16px',boxShadow:'0 4px 24px rgba(0,0,0,0.3)'}},
+      h('div',{className:'max-w-5xl',style:{display:'flex',alignItems:'center',justifyContent:'space-between'}},
+        h('button',{onClick:()=>nav('#/'),style:{color:'#94a3b8',fontSize:'14px',fontWeight:500,background:'none',border:'none',cursor:'pointer',transition:'color 0.2s'},onMouseEnter:e=>e.currentTarget.style.color='#fb923c',onMouseLeave:e=>e.currentTarget.style.color='#94a3b8'},'Back to Home'),
+        h(Logo)
+      )
+    ),
+    h('div',{className:'max-w-5xl',style:{padding:'40px 16px'}},
+      /* search box */
+      h('div',{style:{background:'#0d1f3c',borderRadius:'16px',padding:'32px',marginBottom:'32px',textAlign:'center',boxShadow:'0 4px 24px rgba(0,0,0,0.2)'}},
+        h('h1',{style:{fontSize:'clamp(1.5rem,4vw,2rem)',fontWeight:900,color:'#fff',marginBottom:'8px'}},'Track Your Shipment'),
+        h('p',{style:{color:'#94a3b8',marginBottom:'24px',fontSize:'14px'}},'Enter your tracking number below'),
+        h('form',{onSubmit:doSearch,style:{display:'flex',gap:'12px',maxWidth:'560px',margin:'0 auto',flexWrap:'wrap'}},
+          h('input',{className:'input-dark',style:{flex:'1',minWidth:'200px'},type:'text',value:search,onChange:e=>setSearch(e.target.value),placeholder:'e.g. DCX1A2B3C4D'}),
+          h('button',{type:'submit',className:'btn-orange',style:{padding:'14px 32px'}},'Search')
+        )
+      ),
+
+      loading&&h('div',{style:{textAlign:'center',padding:'64px'}},h('div',{className:'spinner'}),h('p',{style:{color:'#64748b',marginTop:'16px',fontSize:'14px'}},'Fetching shipment...')),
+
+      queried&&!loading&&notFound&&h('div',{style:{background:'#fff',borderRadius:'16px',padding:'64px 24px',textAlign:'center',boxShadow:'0 1px 3px rgba(0,0,0,0.06)',border:'1px solid #f1f5f9'}},
+        h('div',{style:{width:'80px',height:'80px',background:'#f1f5f9',borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 16px'}},h('div',{dangerouslySetInnerHTML:{__html:`<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`},style:{width:36,height:36}})),
+        h('h2',{style:{fontSize:'24px',fontWeight:700,color:'#0a1628',marginBottom:'8px'}},'No Shipment Found'),
+        h('p',{style:{color:'#64748b'}},'We could not find a shipment with tracking number ',h('span',{style:{fontFamily:'monospace',color:'#f97316',fontWeight:700}},queried)),
+        h('p',{style:{color:'#94a3b8',fontSize:'14px',marginTop:'8px'}},'Please check the number and try again, or contact support.')
+      ),
+
+      !loading&&ship&&h(React.Fragment,null,
+        /* status banner */
+        h('div',{style:{borderRadius:'16px',padding:'24px',marginBottom:'24px',color:'#fff',background:sbg,boxShadow:`0 8px 24px ${sbg}40`,display:'flex',flexWrap:'wrap',alignItems:'flex-start',justifyContent:'space-between',gap:'16px'}},
+          h('div',null,h('p',{style:{color:'rgba(255,255,255,0.7)',fontSize:'11px',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.1em',marginBottom:'4px'}},'Current Status'),h('h2',{style:{fontSize:'24px',fontWeight:900}},ship.current_status),h('p',{style:{color:'rgba(255,255,255,0.8)',fontSize:'14px',marginTop:'4px'}},ship.current_location)),
+          h('div',{style:{textAlign:'right'}},h('p',{style:{color:'rgba(255,255,255,0.7)',fontSize:'11px',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.1em',marginBottom:'4px'}},'Tracking Number'),h('p',{style:{fontFamily:'monospace',fontSize:'20px',fontWeight:700}},ship.tracking_number),h('p',{style:{color:'rgba(255,255,255,0.8)',fontSize:'12px',marginTop:'4px'}},'Est. Delivery: ',fmtDate(ship.estimated_delivery)))
+        ),
+
+        /* LIVE MAP — renders only when coordinates are present */
+        h(ShipMap,{ship,events}),
+
+        /* progress */
+        !['On Hold','Exception'].includes(ship.current_status)&&h('div',{style:{background:'#fff',borderRadius:'16px',padding:'24px',marginBottom:'24px',boxShadow:'0 1px 3px rgba(0,0,0,0.06)',border:'1px solid #f1f5f9'}},
+          h('h3',{style:{fontWeight:700,color:'#0a1628',marginBottom:'24px',fontSize:'12px',textTransform:'uppercase',letterSpacing:'0.08em'}},'Shipment Progress'),
+          h('div',{style:{position:'relative'}},
+            h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'flex-start',position:'relative',zIndex:1}},
+              STATUS_STEPS.map((step,i)=>h('div',{key:step,className:'progress-step'},h('div',{className:`progress-dot ${i<=si?'done':'pending'}`},i<si?'v':i===si?'*':i+1),h('span',{className:`progress-label ${i<=si?'done':'pending'}`,style:{fontSize:'8px'}},step)))
+            ),
+            h('div',{style:{position:'absolute',top:'16px',left:'16px',right:'16px',height:'2px',background:'#f1f5f9',zIndex:0}},h('div',{style:{height:'100%',background:'#fb923c',width:`${(si/(STATUS_STEPS.length-1))*100}%`,transition:'width 0.7s'}}))
+          )
+        ),
+
+        /* info cards */
+        h('div',{className:'grid-2',style:{marginBottom:'24px'}},
+          IC('Sender',[['Name',ship.sender_name],['City',ship.sender_city||'—'],['Country',ship.sender_country||'—'],ship.sender_phone&&['Phone',ship.sender_phone]].filter(Boolean)),
+          IC('Receiver',[['Name',ship.receiver_name],['City',ship.receiver_city],['Country',ship.receiver_country],ship.receiver_phone&&['Phone',ship.receiver_phone]].filter(Boolean)),
+          IC('Package',[['Description',ship.description],ship.weight&&['Weight',ship.weight],ship.dimensions&&['Dimensions',ship.dimensions],['Type',ship.package_type],['Qty',String(ship.quantity)]].filter(Boolean)),
+          IC('Shipment',[['Service',ship.service_type],['Origin',ship.origin],['Destination',ship.destination],['Est. Delivery',fmtDate(ship.estimated_delivery)],ship.special_instructions&&['Instructions',ship.special_instructions]].filter(Boolean))
+        ),
+
+        /* timeline */
+        events.length>0&&h('div',{style:{background:'#fff',borderRadius:'16px',padding:'24px',marginBottom:'24px',boxShadow:'0 1px 3px rgba(0,0,0,0.06)',border:'1px solid #f1f5f9'}},
+          h('h3',{style:{fontWeight:700,color:'#0a1628',marginBottom:'24px'}},'Tracking History'),
+          h('div',{style:{position:'relative'}},
+            h('div',{style:{position:'absolute',left:'16px',top:0,bottom:0,width:'2px',background:'#f1f5f9'}}),
+            h('div',{style:{display:'flex',flexDirection:'column',gap:'24px'}},
+              events.map((ev,i)=>h('div',{key:ev.id,className:'timeline-item'},
+                h('div',{className:'timeline-dot',style:{background:i===0?'#f97316':'#cbd5e1',boxShadow:i===0?'0 4px 12px rgba(249,115,22,0.4)':'none'}},i===0?'*':'v'),
+                h('div',{className:'timeline-content',style:{flex:1}},
+                  h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:'8px',marginBottom:'4px'}},h('span',{style:{fontWeight:700,fontSize:'14px',color:i===0?'#f97316':'#0a1628'}},ev.status),h('span',{style:{color:'#94a3b8',fontSize:'12px',whiteSpace:'nowrap'}},fmtDT(ev.event_date,ev.event_time))),
+                  h('p',{style:{color:'#475569',fontSize:'14px'}},ev.description),
+                  h('p',{style:{color:'#94a3b8',fontSize:'12px',marginTop:'4px'}},ev.location)
+                )
+              ))
+            )
+          )
+        ),
+
+        /* actions */
+        h('div',{className:'no-print',style:{display:'flex',gap:'12px',marginBottom:'32px',flexWrap:'wrap'}},
+          h('button',{onClick:download,disabled:dl,className:'btn-orange',style:{flex:'1',minWidth:'200px',padding:'16px',opacity:dl?0.7:1}},dl?'Generating...':'Download Receipt (PDF)'),
+          h('button',{onClick:()=>window.print(),className:'btn-dark',style:{flex:'1',minWidth:'200px',padding:'16px'}},'Print Receipt')
+        ),
+
+        /* receipt */
+        h('div',{ref,style:{background:'#fff',borderRadius:'16px',boxShadow:'0 1px 3px rgba(0,0,0,0.06)',border:'1px solid #e2e8f0',overflow:'hidden',fontFamily:'Arial,sans-serif'}},
+          h('div',{style:{background:'#0a1628',padding:'28px 32px'}},
+            h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}},
+              h('div',null,h('div',{style:{display:'flex',alignItems:'center',gap:'10px',marginBottom:'6px'}},h('div',{style:{width:'36px',height:'36px',background:'#f97316',borderRadius:'8px',display:'flex',alignItems:'center',justifyContent:'center'}},h('span',{style:{color:'#fff',fontWeight:900,fontSize:'18px'}},'D')),h('div',null,h('div',{style:{color:'#fff',fontWeight:900,fontSize:'22px',lineHeight:1}},'DASH',h('span',{style:{color:'#fb923c'}},'EX')),h('div',{style:{color:'#fb923c',fontSize:'9px',letterSpacing:'3px',textTransform:'uppercase'}},'Cargo'))),h('p',{style:{color:'#fdba74',fontSize:'11px',fontStyle:'italic',margin:0}},'Precision in Every Delivery')),
+              h('div',{style:{textAlign:'right'}},h('div',{style:{color:'#94a3b8',fontSize:'10px',textTransform:'uppercase',letterSpacing:'1px',marginBottom:'4px'}},'Shipment Receipt'),h('div',{style:{color:'#fff',fontFamily:'monospace',fontSize:'18px',fontWeight:'bold'}},ship.tracking_number),h('div',{style:{color:'#94a3b8',fontSize:'11px',marginTop:'4px'}},'Issued: ',fmtDate(ship.created_at)))
+            )
+          ),
+          h('div',{style:{background:sbg,padding:'12px 32px',display:'flex',justifyContent:'space-between',alignItems:'center'}},h('div',null,h('span',{style:{color:'rgba(255,255,255,0.7)',fontSize:'10px',textTransform:'uppercase',letterSpacing:'1px'}},'Status: '),h('span',{style:{color:'#fff',fontWeight:'bold',fontSize:'14px'}},ship.current_status)),h('div',{style:{textAlign:'right'}},h('span',{style:{color:'rgba(255,255,255,0.7)',fontSize:'10px'}},'Est. Delivery: '),h('span',{style:{color:'#fff',fontWeight:'bold',fontSize:'13px'}},fmtDate(ship.estimated_delivery)))),
+          h('div',{style:{padding:'28px 32px'}},
+            h('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'24px',marginBottom:'24px'}},
+              RB('Sender',h('div',null,h('div',{style:{fontWeight:'bold',fontSize:'14px',color:'#0a1628',marginBottom:'4px'}},ship.sender_name),h('div',{style:{fontSize:'12px',color:'#64748b',lineHeight:'1.6'}},ship.sender_address&&h('div',null,ship.sender_address),h('div',null,`${ship.sender_city||''} ${ship.sender_country||''}`.trim()),ship.sender_phone&&h('div',null,ship.sender_phone),ship.sender_email&&h('div',null,ship.sender_email)))),
+              RB('Receiver',h('div',null,h('div',{style:{fontWeight:'bold',fontSize:'14px',color:'#0a1628',marginBottom:'4px'}},ship.receiver_name),h('div',{style:{fontSize:'12px',color:'#64748b',lineHeight:'1.6'}},ship.receiver_address&&h('div',null,ship.receiver_address),h('div',null,`${ship.receiver_city}, ${ship.receiver_country}`),ship.receiver_phone&&h('div',null,ship.receiver_phone),ship.receiver_email&&h('div',null,ship.receiver_email))))
+            ),
+            h('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'24px',marginBottom:'24px'}},
+              RB('Package',h('div',null,...[['Description',ship.description],['Weight',ship.weight],['Dimensions',ship.dimensions],['Type',ship.package_type],['Quantity',String(ship.quantity)]].filter(([,v])=>v).map(([k,v])=>h('div',{key:k,style:{display:'flex',justifyContent:'space-between',fontSize:'12px',marginBottom:'5px'}},h('span',{style:{color:'#94a3b8'}},k),h('span',{style:{fontWeight:'600',color:'#0a1628'}},v))))),
+              RB('Shipment',h('div',null,...[['Service',ship.service_type],['Origin',ship.origin],['Destination',ship.destination],['Location',ship.current_location]].filter(([,v])=>v).map(([k,v])=>h('div',{key:k,style:{display:'flex',justifyContent:'space-between',fontSize:'12px',marginBottom:'5px'}},h('span',{style:{color:'#94a3b8'}},k),h('span',{style:{fontWeight:'600',color:'#0a1628',textAlign:'right',maxWidth:'55%'}},v)))))
+            ),
+            events.length>0&&RB('Tracking History',h('div',null,...events.map((ev,i)=>h('div',{key:ev.id,style:{display:'flex',gap:'12px',marginBottom:'12px',alignItems:'flex-start'}},h('div',{style:{width:'10px',height:'10px',borderRadius:'50%',background:i===0?'#f97316':'#cbd5e1',flexShrink:0,marginTop:'3px'}}),h('div',null,h('div',{style:{display:'flex',gap:'12px',alignItems:'center'}},h('span',{style:{fontWeight:'bold',fontSize:'12px',color:i===0?'#f97316':'#0a1628'}},ev.status),h('span',{style:{color:'#94a3b8',fontSize:'11px'}},fmtDT(ev.event_date,ev.event_time))),h('div',{style:{color:'#64748b',fontSize:'11px'}},ev.description),h('div',{style:{color:'#94a3b8',fontSize:'10px'}},ev.location)))))),
+            h('div',{style:{textAlign:'center',marginTop:'28px',paddingTop:'20px',borderTop:'1px solid #e2e8f0'}},h('p',{style:{fontSize:'11px',color:'#94a3b8'}},'DashEx Cargo — Precision in Every Delivery — info@dashexcargo.com'))
+          )
+        )
+      )
+    )
+  );
+}
+
+function IC(title,rows){return h('div',{style:{background:'#fff',borderRadius:'16px',padding:'24px',boxShadow:'0 1px 3px rgba(0,0,0,0.06)',border:'1px solid #f1f5f9'}},h('h3',{style:{fontWeight:700,color:'#0a1628',marginBottom:'16px',fontSize:'15px'}},title),h('dl',{style:{display:'flex',flexDirection:'column',gap:'8px'}},rows.map(([k,v])=>h('div',{key:k,style:{display:'flex',justifyContent:'space-between',fontSize:'14px'}},h('dt',{style:{color:'#94a3b8'}},k),h('dd',{style:{fontWeight:600,color:'#0a1628',textAlign:'right',maxWidth:'55%'}},v)))));}
+function RB(title,content){return h('div',{style:{background:'#f8fafd',borderRadius:'12px',padding:'16px',border:'1px solid #e2e8f0'}},h('div',{style:{color:'#f97316',fontWeight:'bold',fontSize:'11px',textTransform:'uppercase',letterSpacing:'1px',marginBottom:'10px'}},title),content);}
+
+/* ════════════════════════════════════════════
+   APP ROUTER
+════════════════════════════════════════════ */
+function App(){
+  const hash=useHash();
+  const [user,setUser]=useState(getSession());
+  if(hash.startsWith('#/track/')){const tn=hash.replace('#/track/','').split('?')[0];return h(TrackPage,{tn,key:tn});}
+  if(hash.startsWith('#/dashboard')){if(!user){nav('#/');return h(MainSite);}return h(Dashboard,{user,onLogout:()=>{setUser(null);nav('#/');}});}
+  return h(MainSite);
+}
+
+ReactDOM.render(h(App),document.getElementById('root'));
+</script>
+</body>
+</html>
